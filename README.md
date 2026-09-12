@@ -11,7 +11,8 @@ you add needs an internet connection so the browser can fetch pdf.js.
 
 ## Deployment
 
-Live site: https://usid0004-stack.github.io/reader/
+Live site (Vercel): https://temporary-speedy-alder-p8a3fpf.vercel.app (temporary until claimed, see below)
+Previous site (GitHub Pages, still deployed): https://usid0004-stack.github.io/reader/
 
 The app is static (HTML, CSS, JavaScript, no build step), so hosting is a
 static site plus Supabase for the account, database and PDF storage. The
@@ -81,8 +82,17 @@ GitHub Pages (already wired up): add `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 as repository *variables* (Settings → Secrets and variables → Actions →
 Variables), then push to `main`. The workflow builds `dist/` and publishes it.
 
-Vercel: `npx vercel` in the folder, set the same two variables in the project
-settings, redeploy. Netlify: `npx netlify deploy --prod`, same variables.
+Vercel (primary): `vercel.json` sets the build command and `dist` output, so
+no dashboard settings are needed. From the folder:
+
+```bash
+npx vercel login          # once, opens a browser
+npx vercel --prod         # production deployment
+```
+
+Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` under Project → Settings →
+Environment Variables (Production) and redeploy for cloud mode. Netlify:
+`npx netlify deploy --prod`, same variables.
 
 ## Use it on your phone (same Wi-Fi)
 
