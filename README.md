@@ -135,10 +135,18 @@ that browser's IndexedDB. What you upload on the computer does not appear on
 the phone, and the other way round. Nothing is synced or uploaded anywhere.
 
 **Speech on phones.** iOS Safari and Android Chrome both support the built-in
-voices. Playback must start from a tap (the Play button). iOS pauses speech
-when the screen locks or Safari goes to the background; progress is saved when
-that happens, so Play resumes where you were. Voices on iOS load after the
-first tap, which is why the voice menu can look empty for a moment.
+voices. Playback must start from a tap (the Play button). Voices on iOS load
+after the first tap, which is why the voice menu can look empty for a moment.
+
+**Listening with the screen off.** iOS stops the device's own voices the
+moment the screen locks; no web app can change that. Two things help:
+
+- *Keep screen on* (in the player, on browsers that support the Screen Wake
+  Lock API, including iOS 16.4+) stops the phone auto-locking while reading.
+- *Cloud voices* are real audio, which iOS keeps playing in the background
+  and on the lock screen, with play, pause and skip controls there. The next
+  two sentences are fetched ahead so gaps stay short. This needs the cloud
+  voices set up below.
 
 **Away from home** you would need to host the three folders (`index.html`,
 `css/`, `js/`) on any static host such as GitHub Pages or Netlify. Both have

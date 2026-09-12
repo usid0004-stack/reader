@@ -126,7 +126,7 @@ window.TtsService = (function () {
 
   // ---------------------------------------------------------------- cloud engine
   function audioElement() {
-    if (!audioEl) { audioEl = new Audio(); audioEl.preload = 'auto'; }
+    if (!audioEl) { audioEl = new Audio(); audioEl.preload = 'auto'; audioEl.setAttribute('playsinline', ''); }
     return audioEl;
   }
   /** Must run synchronously inside a user gesture so later play() calls are allowed on iOS. */
@@ -168,7 +168,7 @@ window.TtsService = (function () {
       const index = session.index;
       if (index >= sentences.length) { playing = false; current = -1; h.onFinish && h.onFinish(); return; }
       const chunks = chunksOf(index);
-      prefetch(index + 1);
+      prefetch(index + 1); prefetch(index + 2); // keep gaps short so background playback on phones is not interrupted
       for (let ci = 0; ci < chunks.length; ci++) {
         let url;
         try { url = await fetchClip(chunks[ci], voice.id); }
@@ -240,6 +240,7 @@ window.TtsService = (function () {
     available: !!synth || cloudAvailable(),
     loadVoices, getVoices: () => voices, onVoicesChanged: (fn) => listeners.add(fn),
     voiceKey, quality, isJarvis, groupName, hasHighQualityEnglish,
+    getAudioElement: audioElement,
     cloudAvailable, getCloudVoices: () => CLOUD_VOICES.map(v => ({ key: CLOUD_PREFIX + v.id, name: v.name, desc: v.desc })),
     isCloudVoice: isCloudKey, isUsingCloud: usingCloud,
     setCredentialsProvider: (fn) => { credentials = fn; },

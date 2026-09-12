@@ -514,6 +514,7 @@
       const ch = Progress.chapterFor(doc, currentCharIndex());
       setStatus(`Sentence ${i + 1} of ${state.sentences.length} · page ${Progress.pageFor(doc, currentCharIndex())}${ch ? ' · ' + ch.title : ''}`);
       state.autosaver.touch(Progress.build(doc, state.sentences, i));
+      updateMediaSession();
     },
     onFinish() {
       if (!state.doc) return;
@@ -593,6 +594,64 @@
     $('pause').querySelector('span').textContent = paused ? 'Resume' : 'Pause';
     $('stop').disabled = !playing;
     $('startOver').hidden = !(state.sentences.length && state.index > 0);
+    updateMediaSession();
+    syncWakeLock();
+    updateBackgroundHint();
+  }
+
+  // ---------------------------------------------------------------- background playback helpers
+  const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  /** Lock-screen / headphone controls and "now playing" info, where the browser supports them. */
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    try {
+      if (state.doc) {
+        const ch = Progress.chapterFor(state.doc, currentCharIndex());
+        ms.metadata = new MediaMetadata({ title: state.doc.title, artist: ch ? ch.title : `Sentence ${state.index + 1} of ${state.sentences.length}`, album: 'Reader' });
+      }
+      ms.playbackState = Tts.isPlaying() ? (Tts.isPaused() ? 'paused' : 'playing') : 'none';
+    } catch (e) { /* ignore */ }
+  }
+  function bindMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    const set = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch (e) { /* unsupported action */ } };
+    set('play', () => play());
+    set('pause', () => { if (Tts.isPlaying() && !Tts.isPaused()) pauseToggle(); });
+    set('stop', () => stop());
+    set('previoustrack', () => jumpTo(state.index - 1));
+    set('nexttrack', () => jumpTo(state.index + 1));
+    set('seekbackward', () => jumpTo(state.index - 1));
+    set('seekforward', () => jumpTo(state.index + 1));
+  }
+
+  /** Screen Wake Lock: stops the phone auto-locking while a device voice reads, since iOS silences it on lock. */
+  let wakeLock = null;
+  function wakeLockWanted() { return !!navigator.wakeLock && $('keepAwake').checked && Tts.isPlaying() && !Tts.isPaused(); }
+  async function syncWakeLock() {
+    if (wakeLockWanted()) {
+      if (wakeLock || document.visibilityState !== 'visible') return;
+      try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+      catch (e) { wakeLock = null; }
+    } else if (wakeLock) {
+      try { await wakeLock.release(); } catch (e) { /* ignore */ }
+      wakeLock = null;
+    }
+  }
+  function updateBackgroundHint() {
+    const el = $('bgHint');
+    if (!state.doc || !Tts.available) { el.hidden = true; return; }
+    const cloud = Tts.isUsingCloud();
+    if (IS_IOS && !cloud) {
+      el.textContent = Tts.cloudAvailable()
+        ? 'Device voices stop when the screen locks. Pick a cloud voice to keep listening with the screen off.'
+        : 'Device voices stop when the screen locks. Keep screen on prevents auto-lock while reading.';
+      el.hidden = false;
+    } else if (cloud) {
+      el.textContent = 'Cloud voices keep playing with the screen off. Use the lock-screen controls to pause or skip.';
+      el.hidden = false;
+    } else el.hidden = true;
   }
 
   // ---------------------------------------------------------------- cloud voices
@@ -719,6 +778,7 @@
     $('voice').addEventListener('change', (e) => {
       Tts.setVoiceKey(e.target.value); saveSettings({ voice: e.target.value });
       if (Tts.isPaused()) setStatus('Paused. The new voice applies when you resume.');
+      updateBackgroundHint();
     });
 
     document.addEventListener('keydown', (e) => {
@@ -729,8 +789,15 @@
       if (e.key === 'ArrowLeft' && e.altKey) $('prevChapter').click();
     });
 
+    if (navigator.wakeLock) {
+      $('keepAwakeLabel').hidden = false;
+      $('keepAwake').checked = loadSettings().keepAwake !== false;
+      $('keepAwake').addEventListener('change', () => { saveSettings({ keepAwake: $('keepAwake').checked }); syncWakeLock(); });
+    }
+    bindMediaSession();
+
     // Save when the reader is hidden or the page is closing; the mirror write is synchronous
-    document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); else syncWakeLock(); });
     window.addEventListener('pagehide', () => { saveNow(); });
     window.addEventListener('beforeunload', () => { saveNow(); Tts.stop(); });
 
