@@ -1,0 +1,9 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reader diagnostics</title>
+<style>body{font:18px/1.6 -apple-system,sans-serif;padding:24px;max-width:600px} a{display:block;padding:12px 0}</style></head><body>
+<h1>Reader diagnostics</h1><p>Open each page in order and note the first one that crashes.</p>
+<a href="1-plain.html">1. Plain page (no CSS, no scripts)</a>
+<a href="2-css.html">2. Page with the stylesheet only</a>
+<a href="3-libs.html">3. Stylesheet plus pdf.js and Supabase libraries</a>
+<a href="4-services.html">4. Plus the app services (no UI logic)</a>
+<a href="../">5. The full app</a>
+<p id="ua"></p><script>document.getElementById('ua').textContent = navigator.userAgent;</script></body></html>

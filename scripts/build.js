@@ -33,7 +33,8 @@ if (process.argv.includes('--local')) {
 const dist = path.join(root, 'dist');
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
-for (const entry of ['index.html', 'css', 'js']) {
+for (const entry of ['index.html', 'css', 'js', 'diag']) {
+  if (!fs.existsSync(path.join(root, entry))) continue;
   fs.cpSync(path.join(root, entry), path.join(dist, entry), { recursive: true });
 }
 fs.writeFileSync(path.join(dist, 'config.js'), config);

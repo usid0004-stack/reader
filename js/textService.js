@@ -4,7 +4,8 @@
  * character index and mapped back to a sentence later.
  */
 window.TextService = (function () {
-  const BOUNDARY = /(?<=[.!?…]["')\]]?)\s+|\n{2,}/g;
+  // Sentence end: punctuation (optionally a closing quote/bracket) then whitespace, or a blank line. No lookbehind, for older Safari.
+  const BOUNDARY = /[.!?…]["')\]]?\s+|\n{2,}/g;
 
   /** @returns {{text:string, start:number, end:number}[]} sentences with character offsets */
   function segmentSentences(text) {
@@ -20,7 +21,8 @@ window.TextService = (function () {
     BOUNDARY.lastIndex = 0;
     let m;
     while ((m = BOUNDARY.exec(text)) !== null) {
-      push(last, m.index);
+      const ws = (m[0].match(/\s+$/) || [''])[0];
+      push(last, m.index + m[0].length - ws.length); // keep the punctuation with the sentence
       last = m.index + m[0].length;
       if (m[0].length === 0) BOUNDARY.lastIndex++;
     }

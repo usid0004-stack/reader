@@ -320,7 +320,8 @@
   /** Keep the page's bottom padding equal to the fixed player's real height so the end of a book is never hidden. */
   function fitPlayer() {
     const player = $('player');
-    document.body.style.paddingBottom = player.hidden ? '' : (player.offsetHeight + 24) + 'px';
+    const next = player.hidden ? '' : (player.offsetHeight + 24) + 'px';
+    if (document.body.style.paddingBottom !== next) document.body.style.paddingBottom = next; // no observer feedback loop
   }
 
   function clearReaderState() {

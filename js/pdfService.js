@@ -16,7 +16,7 @@ window.PdfService = (function () {
     return t
       .replace(/[ \t]+\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
-      .replace(/(?<!\n)\n(?!\n)/g, ' ')   // single line breaks are just wrapping
+      .replace(/([^\n])\n(?!\n)/g, '$1 ')   // single line breaks are just wrapping (no lookbehind, for older Safari)
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/(\w)- (?=[a-z])/g, '$1')  // re-join words hyphenated across lines
       .trim();

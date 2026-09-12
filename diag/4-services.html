@@ -1,0 +1,12 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Diag 4</title><link rel="stylesheet" href="../css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script></head><body><section class="wrap"><header class="top"><h1>Diag 4: services</h1></header><div class="card"><p id="out">Checking…</p><a href="index.html">Back</a></div></section>
+<script src="../js/textService.js"></script><script src="../js/pdfService.js"></script><script src="../js/chapterDetectionService.js"></script><script src="../js/documentStorageService.js"></script><script src="../js/authService.js"></script><script src="../js/cloudStorageService.js"></script><script src="../js/readingProgressService.js"></script><script src="../js/ttsService.js"></script>
+<script>
+(async function(){ const out = []; try { out.push('text: ' + JSON.stringify(TextService.segmentSentences('One. Two!').map(s=>s.text))); } catch(e){ out.push('text ERROR ' + e.message); }
+try { await DocumentStorageService.check(); out.push('indexeddb: ok'); } catch(e){ out.push('indexeddb ERROR ' + e.message); }
+try { out.push('voices: ' + TtsService.loadVoices().length + ' available: ' + TtsService.available); } catch(e){ out.push('tts ERROR ' + e.message); }
+document.getElementById('out').textContent = out.join(' · '); })();
+window.addEventListener('error', e => { document.getElementById('out').textContent += ' · window error: ' + e.message; });
+</script></body></html>

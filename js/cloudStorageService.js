@@ -67,7 +67,7 @@ window.CloudStorageService = (function () {
   async function createDocument({ extraction, chapters, chapterMethod, file, title }) {
     if (!extraction || typeof extraction.fullText !== 'string' || !extraction.fullText.trim()) throw new Error('There is no text to save.');
     const uid = await userId();
-    const id = crypto.randomUUID();
+    const id = crypto.randomUUID ? crypto.randomUUID() : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     let filePath = null;
     if (file) {
       filePath = `${uid}/${id}.pdf`;
