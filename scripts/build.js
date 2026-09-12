@@ -41,5 +41,14 @@ for (const entry of ['index.html', 'css', 'js', 'diag']) {
 }
 fs.writeFileSync(path.join(dist, 'config.js'), config);
 fs.writeFileSync(path.join(dist, '.nojekyll'), '');
+// Cache-busting: stamp local script/stylesheet URLs with a hash of their contents so a new deploy never mixes old and new files
+const crypto = require('crypto');
+const hash = crypto.createHash('sha1');
+for (const dir of ['js', 'css']) for (const f of fs.readdirSync(path.join(dist, dir)).sort()) hash.update(fs.readFileSync(path.join(dist, dir, f)));
+hash.update(config);
+const v = hash.digest('hex').slice(0, 10);
+const indexPath = path.join(dist, 'index.html');
+fs.writeFileSync(indexPath, fs.readFileSync(indexPath, 'utf8').replace(/((?:src|href)=")((?:js|css)\/[^"?]+|config\.js)(")/g, `$1$2?v=${v}$3`));
+console.log('Asset version', v);
 console.log(`Built dist/ (${url ? 'cloud mode: ' + url : 'per-browser mode, no Supabase configured'})`);
 if (!url || !key) console.warn('Warning: SUPABASE_URL / SUPABASE_ANON_KEY not set. The site will store books in each browser only.');
