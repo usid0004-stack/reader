@@ -1,0 +1,12 @@
+{
+  "name": "reader",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PDF reader with text-to-speech, a personal library and cross-device progress",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "config": "node scripts/build.js --local",
+    "dev": "node scripts/build.js --local && ./serve.sh 8080",
+    "test": "echo 'Open test/index.html from a local server, e.g. npm run dev then http://localhost:8080/test/'"
+  }
+}
