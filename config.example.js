@@ -3,5 +3,7 @@
 // in per-browser mode with no account or cloud sync.
 window.READER_CONFIG = {
   supabaseUrl: '',      // e.g. https://abcdefghijkl.supabase.co
-  supabaseAnonKey: ''   // the "anon public" key; it is safe to ship to browsers, row-level security protects the data
+  supabaseAnonKey: '',  // the "anon public" key; it is safe to ship to browsers, row-level security protects the data
+  cloudTts: false,      // offer cloud voices (needs api/tts on Vercel with OPENAI_API_KEY and TTS_ACCESS_CODE)
+  cloudTtsEndpoint: '/api/tts'
 };

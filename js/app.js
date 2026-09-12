@@ -528,9 +528,11 @@
       updateButtons();
     },
     onError(err) {
-      setStatus(err === 'unavailable' ? 'Speech is not available in this browser.' : 'Speech error: ' + err);
       saveNow();
       updateButtons();
+      if (err === 'cloud-auth') { askForAccessCode(); return; }
+      if (typeof err === 'string' && err.indexOf('cloud:') === 0) { setStatus(err.slice(6)); return; }
+      setStatus(err === 'unavailable' ? 'Speech is not available in this browser.' : 'Speech error: ' + err);
     }
   };
 
@@ -577,7 +579,7 @@
     if (!Tts.available) return;
     const wasReading = Tts.isPlaying();
     if (wasReading) saveNow();
-    Tts.preview();
+    Promise.resolve(Tts.preview()).catch(err => { const m = msg(err); if (m === 'cloud-auth') askForAccessCode(); else setStatus(m.indexOf('cloud:') === 0 ? m.slice(6) : 'Preview failed: ' + m); });
     updateButtons();
     if (wasReading && state.doc) setStatus('Reading stopped for the voice preview. Press Play to continue.');
   }
@@ -593,12 +595,52 @@
     $('startOver').hidden = !(state.sentences.length && state.index > 0);
   }
 
+  // ---------------------------------------------------------------- cloud voices
+  const ACCESS_KEY = 'reader.ttsAccessCode';
+  function getAccessCode() { try { return localStorage.getItem(ACCESS_KEY) || ''; } catch (e) { return ''; } }
+  function askForAccessCode() {
+    const dlg = $('accessDialog');
+    if (dlg.open) return;
+    $('accessError').textContent = getAccessCode() ? 'That code was not accepted. Try again.' : '';
+    $('accessError').hidden = !$('accessError').textContent;
+    $('accessCode').value = '';
+    setStatus('Cloud voices need the access code.');
+    dlg.showModal();
+    $('accessCode').focus();
+  }
+  function bindCloudVoices() {
+    Tts.setCredentialsProvider(async () => {
+      let bearer = '';
+      if (cloudMode) { try { const s = await Auth.getSession(); bearer = s ? s.access_token : ''; } catch (e) { bearer = ''; } }
+      return { accessCode: getAccessCode(), bearer };
+    });
+    $('accessCancel').addEventListener('click', () => $('accessDialog').close());
+    $('accessForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = $('accessCode').value.trim();
+      if (!code) { $('accessError').textContent = 'Enter the access code.'; $('accessError').hidden = false; return; }
+      try { localStorage.setItem(ACCESS_KEY, code); } catch (err) { /* ignore */ }
+      $('accessDialog').close();
+      if (state.doc && state.view === 'reader') play();
+    });
+  }
+
   // ---------------------------------------------------------------- voices
   function renderVoices() {
     const sel = $('voice');
     const voices = Tts.getVoices();
     sel.innerHTML = '';
     const groups = {};
+    if (Tts.cloudAvailable()) {
+      const g = document.createElement('optgroup');
+      g.label = 'Cloud voices (same on every device)';
+      for (const v of Tts.getCloudVoices()) {
+        const o = document.createElement('option');
+        o.value = v.key; o.textContent = `${v.name}  ·  ${v.desc}`;
+        g.appendChild(o);
+      }
+      sel.appendChild(g);
+    }
     for (const v of voices) {
       const g = Tts.groupName(v);
       if (!groups[g]) { groups[g] = document.createElement('optgroup'); groups[g].label = g; sel.appendChild(groups[g]); }
@@ -611,7 +653,7 @@
       groups[g].appendChild(o);
     }
     sel.value = Tts.getVoiceKey() || '';
-    $('voiceTip').hidden = !Tts.available || !voices.length || Tts.hasHighQualityEnglish();
+    $('voiceTip').hidden = !Tts.available || !voices.length || Tts.hasHighQualityEnglish() || Tts.cloudAvailable();
   }
 
   // ---------------------------------------------------------------- events
@@ -810,15 +852,17 @@
     if (settings.rate) { $('rate').value = settings.rate; $('rateValue').textContent = parseFloat(settings.rate).toFixed(1) + 'x'; Tts.setRate(settings.rate); }
     if (settings.voice) Tts.setVoiceKey(settings.voice);
     bind();
-    if (Tts.available) {
+    if (window.speechSynthesis) {
       Tts.onVoicesChanged(renderVoices);
       Tts.loadVoices();
-    } else {
+    }
+    if (!Tts.available) {
       ['play', 'pause', 'stop', 'previewVoice', 'voice', 'rate'].forEach(id => { $(id).disabled = true; });
       setStatus('Speech is not available in this browser.');
       setLibStatus('Speech synthesis is not supported in this browser, so books can be stored but not read aloud.');
     }
     renderVoices();
+    bindCloudVoices();
     $('importLocal').addEventListener('click', importLocalLibrary);
     if (cloudMode) {
       $('accountBar').hidden = false;

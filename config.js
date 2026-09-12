@@ -4,5 +4,7 @@
 // public value; row-level security protects the data.
 window.READER_CONFIG = {
   supabaseUrl: '',
-  supabaseAnonKey: ''
+  supabaseAnonKey: '',
+  cloudTts: false,            // true when the deployment has api/tts with an OPENAI_API_KEY
+  cloudTtsEndpoint: '/api/tts'
 };

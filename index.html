@@ -89,6 +89,20 @@
   </form>
 </dialog>
 
+<dialog id="accessDialog" aria-labelledby="accessTitle">
+  <form id="accessForm" method="dialog" novalidate>
+    <h2 id="accessTitle">Cloud voices access code</h2>
+    <p>Cloud voices cost money per sentence, so they are protected by the access code set on the server. Enter it once on this device.</p>
+    <label class="field" for="accessCode">Access code</label>
+    <input id="accessCode" type="password" autocomplete="off">
+    <p id="accessError" class="form-error" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" id="accessCancel" class="ghost">Cancel</button>
+      <button type="submit" id="accessOk" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
   <form method="dialog">
     <h2 id="confirmTitle">Delete this book?</h2>

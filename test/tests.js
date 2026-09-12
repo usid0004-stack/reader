@@ -318,6 +318,40 @@
     assert(calls === 1);
   });
 
+  // ------------------------------------------------------------ cloud voices (mocked endpoint)
+  await test('cloud voice requests carry the access code and surface auth errors', async () => {
+    const Tts = window.TtsService;
+    window.READER_CONFIG = { cloudTts: true, cloudTtsEndpoint: '/api/tts' };
+    assert(Tts.cloudAvailable(), 'cloud voices offered when configured');
+    assert(Tts.getCloudVoices().some(v => v.key === 'cloud:onyx'));
+    const calls = [];
+    const realFetch = window.fetch;
+    window.fetch = async (url, opts) => { calls.push({ url, headers: opts.headers, body: JSON.parse(opts.body) }); return { status: 401, ok: false, json: async () => ({ error: 'Access code required.' }) }; };
+    Tts.setCredentialsProvider(async () => ({ accessCode: 'secret', bearer: '' }));
+    Tts.setVoiceKey('cloud:onyx');
+    const errors = [];
+    Tts.speakFrom([{ text: 'Hello there.' }], 0, { onError: (e) => errors.push(e) });
+    await wait(200);
+    window.fetch = realFetch;
+    Tts.stop();
+    eq(calls.length, 1); eq(calls[0].url, '/api/tts'); eq(calls[0].headers['x-access-code'], 'secret'); eq(calls[0].body, { text: 'Hello there.', voice: 'onyx' });
+    eq(errors, ['cloud-auth']);
+    assert(!Tts.isPlaying());
+  });
+  await test('cloud voice service errors are reported with their message and other statuses do not loop', async () => {
+    const Tts = window.TtsService;
+    const realFetch = window.fetch;
+    let n = 0;
+    window.fetch = async () => { n++; return { status: 503, ok: false, json: async () => ({ error: 'Cloud voices are not configured on this deployment.' }) }; };
+    const errors = [];
+    Tts.speakFrom([{ text: 'One.' }, { text: 'Two.' }], 0, { onError: (e) => errors.push(e) });
+    await wait(200);
+    window.fetch = realFetch; Tts.stop();
+    eq(errors, ['cloud:Cloud voices are not configured on this deployment.']);
+    assert(n <= 2, 'at most the current sentence and one prefetch');
+    delete window.READER_CONFIG;
+  });
+
   // ------------------------------------------------------------ ttsService guards
   await test('tts entry points are guarded when speech is unavailable', () => {
     const Tts = window.TtsService;

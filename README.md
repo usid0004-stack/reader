@@ -94,6 +94,28 @@ Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` under Project → Settings →
 Environment Variables (Production) and redeploy for cloud mode. Netlify:
 `npx netlify deploy --prod`, same variables.
 
+## Cloud voices (optional)
+
+The device's own voices are free but vary a lot; iPhones only have Apple's.
+Cloud voices sound the same everywhere and are much more natural. They use
+OpenAI's text-to-speech through `api/tts.js`, a Vercel function that keeps
+the API key on the server. Cost is about US$15 per million characters, so
+a 300-page book is roughly US$7 if you listen to all of it. Clips are cached
+per sentence while the page is open.
+
+Set these in Vercel (Project → Settings → Environment Variables), then redeploy:
+
+```
+OPENAI_API_KEY    secret, from platform.openai.com
+TTS_ACCESS_CODE   any passphrase; the app asks for it once per device so strangers can't use your key
+```
+
+Signed-in Supabase users are accepted instead of the code when `SUPABASE_URL`
+and `SUPABASE_ANON_KEY` are also set on the server. The build turns the key's
+presence into `cloudTts: true` in `config.js`, which adds a "Cloud voices"
+group to the voice menu. GitHub Pages has no functions, so cloud voices only
+work on the Vercel deployment.
+
 ## Use it on your phone (same Wi-Fi)
 
 Your computer serves the app and must stay awake and on the same network:
